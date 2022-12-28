@@ -11,9 +11,9 @@ command_line_options_t::command_line_options_t() {
     opt_conf.add_options()
         ("help,h",
                 "Show help message")
-        ("A_flag,A",
-                "All invisible characters, except for whitespaces, "
-                "should be displayed as their hexadecimal codes")
+        ("soft,s",
+                "Soft link creation")
+        ("hard,h", "Hard link creation")
         ;
 }
 
@@ -27,20 +27,44 @@ void command_line_options_t::parse(int ac, char **av) {
     try {
         po::parsed_options parsed = po::command_line_parser(ac, av).options(opt_conf).allow_unregistered().run();
         po::store(parsed, var_map);
-        filenames = po::collect_unrecognized(parsed.options, po::include_positional);
+        auto files = po::collect_unrecognized(parsed.options, po::include_positional);
         if (var_map.count("help")) {
-            std::cout << opt_conf << "\n";
+            std::cout << opt_conf << std::endl;
             exit(EXIT_SUCCESS);
         }
-        A_flag = var_map.count("A_flag");
+
+        if (var_map.count("soft")) {
+            if (var_map.count("hard")) {
+                std::cerr << "Specify one link type: soft of hard!" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            symblink = true;
+        }
+        if (files.size() > 2) {
+            std::cerr << opt_conf << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        src = files[0];
+        dst = files[1];
+        if (!file_exist(src)) {
+            std::cerr <<"File '" << src << "' not found!" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (file_exist(dst)) {
+            std::cerr <<"File '" << dst << "' already exists!" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         po::notify(var_map);
     } catch (std::exception &ex) {
         throw OptionsParseException(ex.what()); // Convert to our error type
     }
 }
 
-void assert_file_exist(const std::string &f_name) {
-    if (!std::filesystem::exists(f_name)) {
-        throw std::invalid_argument("File " + f_name + " not found!");
+bool file_exist(const std::string &f_name) {
+    if (std::filesystem::exists(f_name)) {
+        return true;
     }
+    return false;
 }

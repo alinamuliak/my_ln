@@ -11,7 +11,7 @@ public:
     using runtime_error::runtime_error;
 };
 
-void assert_file_exist(const std::string &f_name);
+bool file_exist(const std::string &f_name);
 
 class command_line_options_t {
 public:
@@ -25,17 +25,20 @@ public:
     command_line_options_t& operator=(command_line_options_t&&) = delete;
     ~command_line_options_t() = default;
 
-    [[nodiscard]] std::vector<std::string> get_filenames() const { return filenames; };
-    [[nodiscard]] bool get_A_flag() const { return A_flag; };
+    [[nodiscard]] std::string get_sourse() const { return src; };
+    [[nodiscard]] std::string get_destination() const { return dst; };
+
+    [[nodiscard]] bool is_soft_link() const { return symblink; };
 
     void parse(int ac, char **av);
 private:
-    bool A_flag = false;
-    std::vector<std::string> filenames;
+    std::string src;
+    std::string dst;
+    bool symblink = false;
 
     boost::program_options::variables_map var_map{};
     boost::program_options::options_description opt_conf{
-            "Config File Options:\n\tmycat [-h|--help] [-A_flag] <file1> <file2> ... <fileN>\n"};
+            "Config File Options:\n\tmy_ln [--soft|--hard|--help] source dest\n"};
 };
 
 #endif //MYCAT_CONFIG_FILE_H
